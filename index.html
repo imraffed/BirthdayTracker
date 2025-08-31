@@ -1,0 +1,242 @@
+<!--
+  Employee Birthday & Work Anniversary Calendar (Preloaded)
+
+  This file is identical to employee_calendar_blank.html except that it
+  includes the current employee list preloaded from the provided CSV. You can
+  still upload a new CSV to replace the built‑in data if staffing changes.
+  The aesthetics mirror the dynamic colour palette of thetravelagency.co with
+  warm red and cream backgrounds and turquoise highlights.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Employee Birthdays & Work Anniversaries</title>
+  <!-- FullCalendar and supporting libraries from CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.4/index.global.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.4/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    body {
+      background-color: #FFF4E6;
+      font-family: 'Georgia', serif;
+      margin: 0;
+    }
+    header {
+      background-color: #E73C32;
+      color: #FFFFFF;
+      padding: 1rem;
+      text-align: center;
+    }
+    h1 {
+      margin: 0;
+      font-size: 2rem;
+      letter-spacing: 1px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .controls label {
+      font-weight: bold;
+      color: #333;
+    }
+    .controls input[type="checkbox"] {
+      margin-right: 5px;
+    }
+    .search-box {
+      flex-grow: 1;
+    }
+    .search-box input {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #CCC;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+    input[type="file"] {
+      padding: 0.5rem;
+      border: 1px solid #CCC;
+      border-radius: 4px;
+      background-color: #FFFFFF;
+    }
+    #calendar {
+      background-color: #FFFFFF;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Employee Birthdays & Work Anniversaries</h1>
+  </header>
+  <div class="container">
+    <div class="controls">
+      <input type="file" id="csvFileInput" accept=".csv" />
+      <label><input type="checkbox" id="toggleBirthdays" checked />Show Birthdays</label>
+      <label><input type="checkbox" id="toggleAnniversaries" checked />Show Anniversaries</label>
+      <label><input type="checkbox" id="toggleYears" checked />Show Years of Service</label>
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search by name…" />
+      </div>
+    </div>
+    <div id="calendar"></div>
+  </div>
+  <script>
+    // Preloaded employee data extracted from the supplied CSV. Each entry records
+    // the employee name along with their birthday (month/day) and start date
+    // (month/day/year). Work anniversaries repeat every year on the same month
+    // and day; birthdays repeat annually as well.
+    var employeeData = [{"name": "George Allen", "birthdayMonth": 1, "birthdayDay": 7, "startMonth": 1, "startDay": 10, "startYear": 2024}, {"name": "Josiah Anderson", "birthdayMonth": 1, "birthdayDay": 9, "startMonth": 11, "startDay": 12, "startYear": 2024}, {"name": "Randolph Arias", "birthdayMonth": 10, "birthdayDay": 12, "startMonth": 7, "startDay": 28, "startYear": 2025}, {"name": "Blane Barton", "birthdayMonth": null, "birthdayDay": null, "startMonth": null, "startDay": null, "startYear": null}, {"name": "Rashae Black", "birthdayMonth": 1, "birthdayDay": 3, "startMonth": 7, "startDay": 9, "startYear": 2024}, {"name": "Anthony Bonny", "birthdayMonth": 3, "birthdayDay": 9, "startMonth": 6, "startDay": 16, "startYear": 2025}, {"name": "Keith Charles-Ollivierre", "birthdayMonth": 3, "birthdayDay": 14, "startMonth": 11, "startDay": 20, "startYear": 2024}, {"name": "Amir B Chase", "birthdayMonth": 1, "birthdayDay": 3, "startMonth": 1, "startDay": 15, "startYear": 2024}, {"name": "Rahul Chopra", "birthdayMonth": 1, "birthdayDay": 4, "startMonth": 7, "startDay": 9, "startYear": 2024}, {"name": "Jude Chua", "birthdayMonth": 12, "birthdayDay": 31, "startMonth": 7, "startDay": 7, "startYear": 2025}, {"name": "Edwin De Leon", "birthdayMonth": 12, "birthdayDay": 31, "startMonth": 8, "startDay": 19, "startYear": 2024}, {"name": "Samuel Feldman", "birthdayMonth": 4, "birthdayDay": 11, "startMonth": 9, "startDay": 24, "startYear": 2024}, {"name": "Andrew Figueroa", "birthdayMonth": 1, "birthdayDay": 5, "startMonth": 8, "startDay": 19, "startYear": 2024}, {"name": "Jean-Luc Folias", "birthdayMonth": 1, "birthdayDay": 3, "startMonth": 7, "startDay": 9, "startYear": 2024}, {"name": "Matthew Fraser", "birthdayMonth": 10, "birthdayDay": 25, "startMonth": 6, "startDay": 12, "startYear": 2025}, {"name": "Scott Goddard", "birthdayMonth": null, "birthdayDay": null, "startMonth": null, "startDay": null, "startYear": null}, {"name": "Derick Grant", "birthdayMonth": 5, "birthdayDay": 15, "startMonth": 1, "startDay": 8, "startYear": 2024}, {"name": "Kai Jackson", "birthdayMonth": 10, "birthdayDay": 2, "startMonth": 6, "startDay": 12, "startYear": 2025}, {"name": "Brandon Johnson", "birthdayMonth": 8, "birthdayDay": 30, "startMonth": 7, "startDay": 9, "startYear": 2024}, {"name": "Jalen Johnson", "birthdayMonth": 4, "birthdayDay": 14, "startMonth": 9, "startDay": 24, "startYear": 2024}, {"name": "Colbi Kubo", "birthdayMonth": 8, "birthdayDay": 8, "startMonth": 7, "startDay": 9, "startYear": 2024}, {"name": "Taziyah Lawrence", "birthdayMonth": 4, "birthdayDay": 3, "startMonth": 6, "startDay": 11, "startYear": 2025}, {"name": "Shelby Levinson", "birthdayMonth": null, "birthdayDay": null, "startMonth": null, "startDay": null, "startYear": null}, {"name": "Sheree Lewis", "birthdayMonth": 2, "birthdayDay": 15, "startMonth": 6, "startDay": 12, "startYear": 2025}, {"name": "Mason Matos", "birthdayMonth": 9, "birthdayDay": 11, "startMonth": 1, "startDay": 8, "startYear": 2024}, {"name": "Jeffrey McHale", "birthdayMonth": 9, "birthdayDay": 23, "startMonth": 1, "startDay": 8, "startYear": 2024}, {"name": "Janice Morrison", "birthdayMonth": null, "birthdayDay": null, "startMonth": null, "startDay": null, "startYear": null}, {"name": "Mark Muniz", "birthdayMonth": 7, "birthdayDay": 16, "startMonth": 11, "startDay": 1, "startYear": 2024}, {"name": "Shaquan Murray", "birthdayMonth": 2, "birthdayDay": 9, "startMonth": 11, "startDay": 12, "startYear": 2024}, {"name": "Michele Papaleo", "birthdayMonth": 3, "birthdayDay": 27, "startMonth": 1, "startDay": 8, "startYear": 2024}, {"name": "Allen Parker", "birthdayMonth": 3, "birthdayDay": 3, "startMonth": 1, "startDay": 8, "startYear": 2024}, {"name": "Omari Prescott", "birthdayMonth": 12, "birthdayDay": 27, "startMonth": 1, "startDay": 8, "startYear": 2024}, {"name": "Marco Rabanal", "birthdayMonth": 4, "birthdayDay": 18, "startMonth": 1, "startDay": 8, "startYear": 2024}, {"name": "Milton Ramos", "birthdayMonth": 3, "birthdayDay": 27, "startMonth": 8, "startDay": 19, "startYear": 2024}, {"name": "Gabriel Reed", "birthdayMonth": 11, "birthdayDay": 15, "startMonth": 11, "startDay": 12, "startYear": 2024}, {"name": "Juan Rojas", "birthdayMonth": 8, "birthdayDay": 2, "startMonth": 11, "startDay": 12, "startYear": 2024}, {"name": "Chelsea Sanchez", "birthdayMonth": 3, "birthdayDay": 28, "startMonth": 7, "startDay": 9, "startYear": 2024}, {"name": "Alex Santiago", "birthdayMonth": 1, "birthdayDay": 31, "startMonth": 8, "startDay": 19, "startYear": 2024}, {"name": "Daniel Savillo", "birthdayMonth": 6, "birthdayDay": 10, "startMonth": 1, "startDay": 8, "startYear": 2024}, {"name": "Melvin Tineo", "birthdayMonth": 10, "birthdayDay": 25, "startMonth": 6, "startDay": 20, "startYear": 2025}, {"name": "Bruce Torres", "birthdayMonth": 5, "birthdayDay": 3, "startMonth": 1, "startDay": 8, "startYear": 2024}, {"name": "Lori Walker", "birthdayMonth": 12, "birthdayDay": 14, "startMonth": 8, "startDay": 19, "startYear": 2024}, {"name": "Jackson Wise", "birthdayMonth": 9, "birthdayDay": 23, "startMonth": 11, "startDay": 12, "startYear": 2024}, {"name": "Ariana Witherspoon", "birthdayMonth": 5, "birthdayDay": 10, "startMonth": 1, "startDay": 8, "startYear": 2024}, {"name": "Sadie Wood", "birthdayMonth": 12, "birthdayDay": 19, "startMonth": 6, "startDay": 12, "startYear": 2025}, {"name": "Precious Yates", "birthdayMonth": 10, "birthdayDay": 17, "startMonth": 11, "startDay": 20, "startYear": 2024}, {"name": "Kevin Yu", "birthdayMonth": 5, "birthdayDay": 8, "startMonth": 1, "startDay": 15, "startYear": 2024}];
+
+    function initCalendar() {
+      var showBirthdays = document.getElementById('toggleBirthdays').checked;
+      var showAnniversaries = document.getElementById('toggleAnniversaries').checked;
+      var showYears = document.getElementById('toggleYears').checked;
+      var searchQuery = '';
+
+      function computeEvents(rangeStart, rangeEnd) {
+        var events = [];
+        var startYear = rangeStart.getFullYear();
+        var endYear = rangeEnd.getFullYear();
+        for (var i = 0; i < employeeData.length; i++) {
+          var person = employeeData[i];
+          var name = person.name;
+          if (searchQuery && name.toLowerCase().indexOf(searchQuery.toLowerCase()) === -1) {
+            continue;
+          }
+          if (showBirthdays && person.birthdayMonth && person.birthdayDay) {
+            for (var year = startYear; year <= endYear; year++) {
+              var month = person.birthdayMonth;
+              var day = person.birthdayDay;
+              var date = new Date(year, month - 1, day);
+              if (month === 2 && day === 29 && date.getMonth() !== 1) {
+                date = new Date(year, 1, 28);
+              }
+              if (date >= rangeStart && date <= rangeEnd) {
+                events.push({
+                  title: name + ' Birthday',
+                  start: date.toISOString().slice(0, 10),
+                  allDay: true,
+                  extendedProps: { type: 'birthday', person: name }
+                });
+              }
+            }
+          }
+          if (showAnniversaries && person.startMonth && person.startDay && person.startYear) {
+            for (var year = startYear; year <= endYear; year++) {
+              if (year < person.startYear) continue;
+              var date = new Date(year, person.startMonth - 1, person.startDay);
+              if (date >= rangeStart && date <= rangeEnd) {
+                var years = year - person.startYear + 1;
+                var title = name + ' Work Anniversary';
+                if (showYears) {
+                  title += ' (' + years + (years === 1 ? ' year' : ' years') + ')';
+                }
+                events.push({
+                  title: title,
+                  start: date.toISOString().slice(0, 10),
+                  allDay: true,
+                  extendedProps: { type: 'anniversary', person: name, years: years }
+                });
+              }
+            }
+          }
+        }
+        return events;
+      }
+      var calendarEl = document.getElementById('calendar');
+      var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        height: 'auto',
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: ''
+        },
+        eventDidMount: function(info) {
+          if (info.event.extendedProps.type === 'birthday') {
+            info.el.style.backgroundColor = '#F06157';
+            info.el.style.borderColor = '#F06157';
+          } else if (info.event.extendedProps.type === 'anniversary') {
+            info.el.style.backgroundColor = '#00A88E';
+            info.el.style.borderColor = '#00A88E';
+          }
+          info.el.style.color = '#FFFFFF';
+          info.el.style.fontWeight = 'bold';
+        },
+        events: function(fetchInfo, successCallback) {
+          var events = computeEvents(fetchInfo.start, fetchInfo.end);
+          successCallback(events);
+        }
+      });
+      calendar.render();
+      document.getElementById('toggleBirthdays').addEventListener('change', function() {
+        showBirthdays = this.checked;
+        calendar.refetchEvents();
+      });
+      document.getElementById('toggleAnniversaries').addEventListener('change', function() {
+        showAnniversaries = this.checked;
+        calendar.refetchEvents();
+      });
+      document.getElementById('toggleYears').addEventListener('change', function() {
+        showYears = this.checked;
+        calendar.refetchEvents();
+      });
+      document.getElementById('searchInput').addEventListener('input', function() {
+        searchQuery = this.value;
+        calendar.refetchEvents();
+      });
+      document.getElementById('csvFileInput').addEventListener('change', function(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        Papa.parse(file, {
+          header: true,
+          skipEmptyLines: true,
+          complete: function(results) {
+            var rows = results.data;
+            employeeData = [];
+            rows.forEach(function(row) {
+              var name = row['Employee'] || ((row['First name'] || '') + ' ' + (row['Last name'] || '')).trim();
+              if (!name) return;
+              var bMonth = null, bDay = null;
+              var bd = row['Birthday'] || row['Birthday (Birthday)'];
+              if (bd) {
+                var parts = bd.split('/');
+                if (parts.length >= 2) {
+                  bMonth = parseInt(parts[0]);
+                  bDay = parseInt(parts[1]);
+                }
+              }
+              var sMonth = null, sDay = null, sYear = null;
+              var sd = row['Start Date'] || row['Start date'] || row['Start date '] || row['Start date\u00a0'];
+              if (sd) {
+                var dp = sd.split('/');
+                if (dp.length >= 3) {
+                  sMonth = parseInt(dp[0]);
+                  sDay = parseInt(dp[1]);
+                  sYear = parseInt(dp[2]);
+                }
+              }
+              employeeData.push({ name: name, birthdayMonth: bMonth, birthdayDay: bDay, startMonth: sMonth, startDay: sDay, startYear: sYear });
+            });
+            calendar.refetchEvents();
+          }
+        });
+      });
+    }
+    window.addEventListener('load', initCalendar);
+  </script>
+</body>
+</html>
