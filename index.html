@@ -75,6 +75,59 @@
       border-radius: 8px;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     }
+
+    /* Modal styles for event details */
+    #eventModal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.6);
+    }
+    #eventModal .modal-content {
+      background-color: #FFFFFF;
+      margin: 10% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 90%;
+      max-width: 400px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      font-family: 'Georgia', serif;
+    }
+    #eventModal .close {
+      color: #AAAAAA;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    #eventModal .close:hover,
+    #eventModal .close:focus {
+      color: #000;
+      text-decoration: none;
+    }
+
+    /* Responsive adjustments for mobile screens */
+    @media (max-width: 600px) {
+      header h1 {
+        font-size: 1.5rem;
+      }
+      .controls {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .controls > * {
+        margin-bottom: 0.5rem;
+      }
+      .search-box input {
+        width: 100%;
+      }
+    }
   </style>
 </head>
 <body>
@@ -92,6 +145,13 @@
       </div>
     </div>
     <div id="calendar"></div>
+    <!-- Modal for displaying detailed event information -->
+    <div id="eventModal">
+      <div class="modal-content">
+        <span class="close" id="modalClose">&times;</span>
+        <div id="modalDetails"></div>
+      </div>
+    </div>
   </div>
   <script>
     // Preloaded employee data extracted from the supplied CSV. Each entry records
@@ -179,9 +239,41 @@
         events: function(fetchInfo, successCallback) {
           var events = computeEvents(fetchInfo.start, fetchInfo.end);
           successCallback(events);
+        },
+        // When an event is clicked, show a modal with more details
+        eventClick: function(info) {
+          var ev = info.event;
+          var ext = ev.extendedProps;
+          var html = '<h2>' + ev.title + '</h2>';
+          html += '<p><strong>Employee:</strong> ' + (ext.person || ev.title.split(' ')[0]) + '</p>';
+          if (ext.type === 'birthday') {
+            var dateStr = ev.startStr;
+            var parts = dateStr.split('-');
+            if (parts.length === 3) {
+              html += '<p><strong>Birthday:</strong> ' + parts[1] + '/' + parts[2] + '</p>';
+            }
+          }
+          if (ext.type === 'anniversary') {
+            html += '<p><strong>Work Anniversary Date:</strong> ' + ev.startStr + '</p>';
+            if (typeof ext.years === 'number') {
+              html += '<p><strong>Years of Service:</strong> ' + ext.years + (ext.years === 1 ? ' year' : ' years') + '</p>';
+            }
+          }
+          document.getElementById('modalDetails').innerHTML = html;
+          document.getElementById('eventModal').style.display = 'block';
         }
       });
       calendar.render();
+
+      // Modal close handlers
+      document.getElementById('modalClose').addEventListener('click', function() {
+        document.getElementById('eventModal').style.display = 'none';
+      });
+      document.getElementById('eventModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          this.style.display = 'none';
+        }
+      });
       document.getElementById('toggleBirthdays').addEventListener('change', function() {
         showBirthdays = this.checked;
         calendar.refetchEvents();
